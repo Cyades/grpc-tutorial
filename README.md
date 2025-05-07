@@ -6,42 +6,110 @@
 ---
 ### ✨ Reflection
 
-1. Apa perbedaan utama antara metode RPC (Remote Procedure Call) unary, server streaming, dan bi-directional streaming? Dalam skenario apa masing-masing metode paling sesuai digunakan?
+1. What are the key differences between unary, server streaming, and bi-directional streaming RPC (Remote Procedure Call) methods, and in what scenarios would each be most suitable?
 
-    Ans
+    **Unary RPC**: Satu permintaan, satu balasan. Cocok untuk operasi CRUD sederhana seperti autentikasi atau `ProcessPayment`.
+    
+    **Server Streaming RPC**: Satu permintaan, banyak balasan. Ideal untuk data besar seperti pencarian, download file, atau `GetTransactionHistory`.
+    
+    **Bi-directional Streaming**: Aliran pesan dua arah secara independen. Sempurna untuk komunikasi real-time seperti aplikasi chat atau game online (`Chat` service).
 
-2. Apa saja pertimbangan keamanan yang potensial dalam mengimplementasikan layanan gRPC di Rust, khususnya terkait autentikasi, otorisasi, dan enkripsi data?
+2. What are the potential security considerations involved in implementing a gRPC service in Rust, particularly regarding authentication, authorization, and data encryption?
 
-    Ans
+    **Autentikasi**: JWT/OAuth2, interceptor untuk validasi token.
+    
+    **Otorisasi**: RBAC, validasi izin per-service/method.
+    
+    **Enkripsi**: TLS/SSL, sertifikat untuk saluran gRPC, enkripsi end-to-end.
+    
+    **Tambahan**: Rate limiting, validasi input ketat, logging untuk audit, penanganan error aman.
 
-3. Apa saja tantangan atau masalah potensial yang mungkin timbul saat menangani bi-directional streaming di Rust gRPC, terutama dalam skenario seperti aplikasi obrolan?
+3. What are the potential challenges or issues that may arise when handling bidirectional streaming in Rust gRPC, especially in scenarios like chat applications?
 
-    Ans
+    **Konkurensi**: Penanganan multiple streams, race condition, thread safety dengan ownership Rust.
+    
+    **Error**: Deteksi pemutusan koneksi, recovery dari kegagalan jaringan.
+    
+    **Resource**: Mencegah memory leak, pembatalan stream yang tepat, pengelolaan backpressure.
+    
+    **State**: Sinkronisasi state antar streams, penyimpanan state saat restart, koordinasi broadcast.
 
-4. Apa kelebihan dan kekurangan menggunakan `tokio_stream::wrappers::ReceiverStream` untuk respons streaming dalam layanan Rust gRPC?
+4. What are the advantages and disadvantages of using the tokio_stream::wrappers::ReceiverStream for streaming responses in Rust gRPC services?
 
-    Ans
+    **Kelebihan**: Integrasi mulus dengan Tokio, antarmuka asinkron jelas, backpressure otomatis, pembatalan bersih.
+    
+    **Kekurangan**: Kompleksitas debugging, potensi deadlock, overhead performa, kurva pembelajaran Tokio yang curam.
 
-5. Dengan cara apa kode Rust gRPC dapat disusun untuk memfasilitasi penggunaan kembali kode dan modularitas, sehingga meningkatkan kemudahan pemeliharaan dan ekstensibilitas seiring waktu?
+5. In what ways could the Rust gRPC code be structured to facilitate code reuse and modularity, promoting maintainability and extensibility over time?
 
-    Ans
+    **Pemisahan Concern**: Pisahkan definisi service dari implementasi, abstraksi logika bisnis.
+    
+    **Trait-Based Design**: Implementasi trait untuk perilaku service, trait bounds untuk fungsi generik.
+    
+    **Modularisasi**: Organisasi modul berdasarkan domain, crate terpisah untuk komponen reusable.
+    
+    **Error Handling**: Error types terstruktur, konversi ke Status gRPC.
+    
+    **Konfigurasi**: Eksternalisasi config, feature flags untuk komponen opsional.
 
-6. Dalam implementasi `MyPaymentService`, langkah tambahan apa yang mungkin diperlukan untuk menangani logika pemrosesan pembayaran yang lebih kompleks?
+6. In the MyPaymentService implementation, what additional steps might be necessary to handle more complex payment processing logic?
 
-    Ans
+    **Validasi**: Input yang ketat, deteksi fraud, enkripsi data sensitif.
+    
+    **Integrasi**: Koneksi ke payment gateway, database transaksi, layanan notifikasi.
+    
+    **Audit**: Logging komprehensif, manajemen transaksi, kemampuan rollback.
+    
+    **Error & Retry**: Strategi retry dengan backoff, circuit breaker, penanganan error aman.
+    
+    **Skalabilitas**: Caching, arsitektur asinkron, connection pooling.
 
-7. Apa dampak adopsi gRPC sebagai protokol komunikasi terhadap arsitektur dan desain keseluruhan sistem terdistribusi, terutama dalam hal interoperabilitas dengan teknologi dan platform lain?
+7. What impact does the adoption of gRPC as a communication protocol have on the overall architecture and design of distributed systems, particularly in terms of interoperability with other technologies and platforms?
 
-    Ans
+    **Contract-First**: Pendekatan "schema first", kontrak API jelas, code generation multi-bahasa.
+    
+    **Microservices**: Komunikasi efisien antar layanan, overhead rendah, streaming data.
+    
+    **Interoperabilitas**: Dukungan multi-bahasa, gRPC gateway untuk REST, tantangan HTTP/2.
+    
+    **Evolusi API**: Versioning terstruktur, backward compatibility, manajemen dependensi jelas.
+    
+    **Performa**: Komunikasi efisien, multiplexing koneksi, tantangan dengan load balancing tradisional.
 
-8. Apa kelebihan dan kekurangan menggunakan HTTP/2, protokol dasar untuk gRPC, dibandingkan dengan HTTP/1.1 atau HTTP/1.1 dengan WebSocket untuk REST API?
+8. What are the advantages and disadvantages of using HTTP/2, the underlying protocol for gRPC, compared to HTTP/1.1 or HTTP/1.1 with WebSocket for REST APIs?
 
-    Ans
+    | Aspek | HTTP/2 (gRPC) | HTTP/1.1 | WebSocket |
+    |-------|---------------|----------|-----------|
+    | Komunikasi | Multiplexing koneksi | Request-response sekuensial | Full-duplex |
+    | Format | Binary protocol efisien | Text-based | Text/binary |
+    | Header | Header compression | Header berulang | Overhead minimal setelah handshake |
+    | Fitur | Server push | Tidak ada | Tidak ada |
+    | Debugging | Kompleks (binary) | Mudah (plaintext) | Moderat |
+    | Tooling | Terbatas | Sangat lengkap | Moderat |
+    | Browser Support | Terbatas | Universal | Luas |
+    | Type Safety | Ketat (dengan Protobuf) | Tidak ada | Tidak ada |
 
-9. Bagaimana model request-response dari REST API berbeda dengan kemampuan bi-directional streaming gRPC dalam hal komunikasi real-time dan responsivitas?
+9. How does the request-response model of REST APIs contrast with the bidirectional streaming capabilities of gRPC in terms of real-time communication and responsiveness?
 
-    Ans
+    | Aspek | REST API | gRPC Bi-directional Streaming |
+    |-------|----------|-------------------------------|
+    | Pola Komunikasi | Sinkron dan stateless | Asinkron dan stateful |
+    | Koneksi | Baru per request (overhead handshake) | Koneksi persisten |
+    | Real-time | Memerlukan polling atau WebSocket | Native streaming |
+    | Backpressure | Tidak ada standar | Fitur bawaan HTTP/2 |
+    | Use case | CRUD sederhana | Komunikasi berkelanjutan real-time |
+    | Overhead | Header berulang, JSON parsing | Header compression, serialisasi efisien |
+    | Skalabilitas | Terbatas untuk real-time | Tinggi untuk komunikasi dua arah |
 
-10. Apa implikasi dari pendekatan berbasis skema gRPC, menggunakan Protocol Buffers, dibandingkan dengan sifat JSON yang lebih fleksibel dan tanpa skema dalam payload REST API?
+10. What are the implications of the schema-based approach of gRPC, using Protocol Buffers, compared to the more flexible, schema-less nature of JSON in REST API payloads?
 
-    Ans
+    | Aspek | Protocol Buffers (gRPC) | JSON (REST API) |
+    |-------|--------------------------|-----------------|
+    | Type Safety | Validasi compile-time | Validasi runtime |
+    | Evolusi API | Aturan kompatibilitas jelas | Fleksibel tapi rawan breaking changes |
+    | Ukuran Payload | 30-70% lebih kecil | Human-readable tapi lebih besar |
+    | Format | Binary | Text-based |
+    | Dokumentasi | Skema sebagai dokumentasi | Memerlukan OpenAPI/Swagger |
+    | Developer Experience | Kurva belajar tinggi | Familiar, mudah debug |
+    | Fleksibilitas | Kaku, perlu kompilasi ulang | Sangat fleksibel, mudah dimodifikasi |
+    | Kecepatan Parsing | Lebih cepat | Lebih lambat |
